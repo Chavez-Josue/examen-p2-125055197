@@ -1,0 +1,46 @@
+version: '3.8'
+
+networks:
+  red-datamart:
+    driver: bridge
+
+volumes:
+  pgdata:
+
+services:
+  hadoop:
+    build: ./hadoop
+    container_name: hadoop_container
+    networks:
+      - red-datamart
+    volumes:
+      - ./:/data
+
+  db:
+    image: postgres:15-alpine
+    container_name: db_container
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - red-datamart
+    ports:
+      - "5432:5432"
+
+  api:
+    build: ./api
+    container_name: api_container
+    environment:
+      DB_HOST: db
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5000:5000"
+    networks:
+      - red-datamart
+    depends_on:
+      - db
