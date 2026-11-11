@@ -93,18 +93,25 @@ Para construir e iniciar los servicios:
 
 ```bash
 docker compose up --build -d
+```
 
 Para consultar el estado de los contenedores:
 
+```bash
 docker compose ps
+```
 
 Para consultar los resultados mediante la API:
 
+```powershell
 Invoke-RestMethod -Uri http://localhost:5000/resultados
+```
 
 Para detener los servicios:
 
+```bash
 docker compose down
+```
 
 ---
 
@@ -112,73 +119,92 @@ docker compose down
 
 ## 10. Cambiar el puerto de la API
 
-En docker-compose.yml, dentro del servicio api, modificar:
+En `docker-compose.yml`, dentro del servicio `api`, modificar:
 
+```yaml
 ports:
   - "5000:5000"
+```
 
 Por ejemplo, cambiarlo a:
 
+```yaml
 ports:
   - "5001:5000"
+```
 
 Guardar y ejecutar:
 
+```bash
 docker compose up -d --build api
+```
 
 Comprobar el acceso:
 
+```powershell
 Invoke-RestMethod http://localhost:5001/resultados
+```
 
-Comprobación: La API debe responder desde el nuevo puerto.
+**Comprobación:** La API debe responder desde el nuevo puerto.
 
-### 10.1. Modificar Mapper o Reducer
+### 10.1 Modificar Mapper o Reducer
 
 Se puede modificar la agregación para calcular el promedio en lugar de la suma o agregar un filtro.
 
-Archivos involucrados:
-- mapreduce/mapper.py
-- mapreduce/reducer.py
+**Archivos involucrados:**
+
+- `mapreduce/mapper.py`
+- `mapreduce/reducer.py`
 
 Para cambiar la suma por promedio, el Reducer debe acumular los ingresos y contar los registros de cada producto. Al finalizar, divide el total entre la cantidad de registros.
 
 Después de guardar los cambios, ejecutar nuevamente el trabajo Hadoop Streaming utilizando el comando de procesamiento documentado anteriormente.
 
-Comprobación: El archivo part-00000 debe mostrar los nuevos resultados.
+**Comprobación:** El archivo `part-00000` debe mostrar los nuevos resultados.
 
-### 10.2. Eliminar el volumen y recargar la base de datos
+### 10.2 Eliminar el volumen y recargar la base de datos
 
 Para demostrar que los resultados pueden cargarse nuevamente:
 
+```bash
 docker compose down -v
+```
 
 Levantar los servicios:
 
+```bash
 docker compose up -d --build
+```
 
 Copiar el archivo de resultados y el script de carga:
 
+```powershell
 docker compose cp .\mapreduce\part-00000 api:/tmp/part-00000
 docker compose cp .\scripts\cargar_resultados.py api:/tmp/cargar_resultados.py
+```
 
 Ejecutar la carga:
 
+```bash
 docker compose exec api python /tmp/cargar_resultados.py
+```
 
 Verificar los registros:
 
+```bash
 docker compose exec db psql -U usuario_db -d ventas_db -c "SELECT COUNT(*) FROM top_productos;"
+```
 
-Comprobación: Deben aparecer nuevamente los registros.
+**Comprobación:** Deben aparecer nuevamente los registros.
 
-Nota: El comando docker compose down -v elimina el volumen y los datos anteriores de PostgreSQL.
+> **Nota:** El comando `docker compose down -v` elimina el volumen y los datos anteriores de PostgreSQL.
 
-### 10.3. Explicación de Dockerfile y Docker Compose
+### 10.3 Explicación de Dockerfile y Docker Compose
 
-- Dockerfile de Hadoop: instalación y configuración de Java, Hadoop, Python y SSH.
-- Dockerfile de API: instalación de Python, dependencias y cliente SSH.
-- docker-compose.yml: configuración de los servicios Hadoop, PostgreSQL y API.
-- Puertos: permiten acceder a los servicios desde el equipo.
-- Volumen: conserva los datos de PostgreSQL.
-- Red: permite la comunicación entre los contenedores.
-- depends_on: establece la dependencia entre los servicios.
+- **Dockerfile de Hadoop:** instalación y configuración de Java, Hadoop, Python y SSH.
+- **Dockerfile de API:** instalación de Python, dependencias y cliente SSH.
+- **docker-compose.yml:** configuración de los servicios Hadoop, PostgreSQL y API.
+- **Puertos:** permiten acceder a los servicios desde el equipo.
+- **Volumen:** conserva los datos de PostgreSQL.
+- **Red:** permite la comunicación entre los contenedores.
+- **depends_on:** establece la dependencia entre los servicios.
